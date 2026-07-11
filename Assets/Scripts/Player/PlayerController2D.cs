@@ -10,25 +10,32 @@ public class PlayerController2D : MonoBehaviour
     [SerializeField] private float moveSpeed = 7f;
 
     [Header("Jump Settings")]
-    [SerializeField] private float jumpForce = 13.5f;
+    [SerializeField] private float jumpForce = 13f;
 
     [Tooltip("Oyuncu zeminden ayrıldıktan sonra kaç saniye daha zıplayabilir?")]
     [SerializeField] private float coyoteTime = 0.12f;
 
-    [Tooltip("Oyuncu yere düşmeden önce zıplamaya basarsa input kaç saniye saklanır?")]
+    [Tooltip("Oyuncu yere inmeden önce zıplamaya basarsa input kaç saniye saklanır?")]
     [SerializeField] private float jumpBufferTime = 0.12f;
 
-    [Tooltip("Zıplama tuşu erken bırakılınca yukarı hız ne kadar kesilecek? 0.35 - 0.55 iyi aralık.")]
-    [SerializeField] private float jumpCutMultiplier = 0.45f;
+    [Tooltip(
+        "Jump tuşu erken bırakıldığında yukarı yönlü hızın ne kadarı korunur? " +
+        "Düşük değer daha kısa zıplama oluşturur."
+    )]
+    [Range(0f, 1f)]
+    [SerializeField] private float jumpCutMultiplier = 0.5f;
 
-    [Header("Gravity Feel")]
-    [Tooltip("Düşerken ekstra gravity çarpanı. 1 normal gravity, 2-3 daha tok düşüş.")]
-    [SerializeField] private float fallGravityMultiplier = 2.2f;
+    [Header("Gravity Settings")]
+    [Tooltip("Oyuncunun normal gravity scale değeri.")]
+    [SerializeField] private float baseGravityScale = 3f;
 
-    [Tooltip("Zıplama tuşu bırakıldıktan sonra yükselirken ekstra gravity. Kısa zıplamayı daha belirgin yapar.")]
-    [SerializeField] private float jumpReleaseGravityMultiplier = 2.4f;
+    [Tooltip(
+        "Oyuncu düşerken normal gravity kaç katına çıkar? " +
+        "Örneğin 1.5 değeri düşüşte 4.5 gravity scale üretir."
+    )]
+    [SerializeField] private float fallingGravityMultiplier = 1.5f;
 
-    [Tooltip("Maksimum düşüş hızı. Negatif değer olmalı.")]
+    [Tooltip("Maksimum düşüş hızı. Negatif değer olmalıdır.")]
     [SerializeField] private float maxFallSpeed = -22f;
 
     [Header("Ground Check")]
@@ -54,8 +61,8 @@ public class PlayerController2D : MonoBehaviour
     private float coyoteCounter;
     private float jumpBufferCounter;
 
-    private bool jumpHeld;
-    private bool jumpReleasedThisFrame;
+    // Update içinde kaydedilir, FixedUpdate içinde uygulanır.
+    private bool jumpCutRequested;
 
     private void Awake()
     {
@@ -63,9 +70,17 @@ public class PlayerController2D : MonoBehaviour
         playerInput = GetComponent<PlayerInput>();
 
         rb.freezeRotation = true;
+        rb.gravityScale = baseGravityScale;
 
-        moveAction = playerInput.actions["Move"];
-        jumpAction = playerInput.actions["Jump"];
+        moveAction = playerInput.actions.FindAction(
+            "Move",
+            throwIfNotFound: true
+        );
+
+        jumpAction = playerInput.actions.FindAction(
+            "Jump",
+            throwIfNotFound: true
+        );
     }
 
     private void Update()
@@ -73,8 +88,7 @@ public class PlayerController2D : MonoBehaviour
         if (!controlsEnabled)
         {
             moveInput = Vector2.zero;
-            jumpHeld = false;
-            jumpReleasedThisFrame = false;
+            jumpCutRequested = false;
             return;
         }
 
@@ -85,43 +99,33 @@ public class PlayerController2D : MonoBehaviour
     private void FixedUpdate()
     {
         CheckGrounded();
-        UpdateTimers();
+        UpdateJumpTimers();
 
         HandleHorizontalMovement();
         HandleJump();
-        ApplyBetterGravity();
+        HandleJumpCut();
+        ApplyGravityAndLimitFallSpeed();
 
-        jumpReleasedThisFrame = false;
         wasGrounded = isGrounded;
     }
 
     private void ReadMoveInput()
     {
-        if (moveAction == null)
-        {
-            moveInput = Vector2.zero;
-            return;
-        }
-
         moveInput = moveAction.ReadValue<Vector2>();
     }
 
     private void ReadJumpInput()
     {
-        if (jumpAction == null)
-            return;
-
         if (jumpAction.WasPressedThisFrame())
         {
             jumpBufferCounter = jumpBufferTime;
         }
 
-        jumpHeld = jumpAction.IsPressed();
-
         if (jumpAction.WasReleasedThisFrame())
         {
-            jumpReleasedThisFrame = true;
-            CutJumpIfMovingUp();
+            // Rigidbody burada değiştirilmez.
+            // Sadece FixedUpdate için istek kaydedilir.
+            jumpCutRequested = true;
         }
     }
 
@@ -133,88 +137,109 @@ public class PlayerController2D : MonoBehaviour
             return;
         }
 
-        isGrounded = Physics2D.OverlapCircle(
+        Collider2D groundCollider = Physics2D.OverlapCircle(
             groundCheck.position,
             groundCheckRadius,
             groundLayer
         );
+
+        isGrounded = groundCollider != null;
     }
 
-    private void UpdateTimers()
+    private void UpdateJumpTimers()
     {
-        if (isGrounded)
+        Vector2 velocity = GetBodyVelocity();
+
+        /*
+         * Oyuncu jump yaptıktan hemen sonra GroundCheck kısa süreliğine
+         * hâlâ zemine değebilir. Dikey hız pozitifken coyote time'ı
+         * yenilemeyerek istemsiz çift zıplamayı engelliyoruz.
+         */
+        if (isGrounded && velocity.y <= 0.05f)
         {
             coyoteCounter = coyoteTime;
         }
         else
         {
             coyoteCounter -= Time.fixedDeltaTime;
+            coyoteCounter = Mathf.Max(coyoteCounter, 0f);
         }
 
         if (jumpBufferCounter > 0f)
         {
             jumpBufferCounter -= Time.fixedDeltaTime;
+            jumpBufferCounter = Mathf.Max(jumpBufferCounter, 0f);
         }
     }
 
     private void HandleHorizontalMovement()
     {
         Vector2 velocity = GetBodyVelocity();
+
         velocity.x = moveInput.x * moveSpeed;
+
         SetBodyVelocity(velocity);
     }
 
     private void HandleJump()
     {
         bool hasBufferedJump = jumpBufferCounter > 0f;
-        bool canUseCoyoteJump = coyoteCounter > 0f;
+        bool canJump = coyoteCounter > 0f;
 
-        if (hasBufferedJump && canUseCoyoteJump)
+        if (!hasBufferedJump || !canJump)
         {
-            Vector2 velocity = GetBodyVelocity();
+            return;
+        }
 
-            velocity.y = 0f;
+        Vector2 velocity = GetBodyVelocity();
+
+        velocity.y = jumpForce;
+
+        SetBodyVelocity(velocity);
+
+        jumpBufferCounter = 0f;
+        coyoteCounter = 0f;
+        isGrounded = false;
+    }
+
+    private void HandleJumpCut()
+    {
+        if (!jumpCutRequested)
+        {
+            return;
+        }
+
+        jumpCutRequested = false;
+
+        Vector2 velocity = GetBodyVelocity();
+
+        // Oyuncu hâlâ yükseliyorsa zıplama yüksekliğini azalt.
+        if (velocity.y > 0f)
+        {
+            velocity.y *= jumpCutMultiplier;
+
             SetBodyVelocity(velocity);
-
-            velocity = GetBodyVelocity();
-            velocity.y = jumpForce;
-            SetBodyVelocity(velocity);
-
-            jumpBufferCounter = 0f;
-            coyoteCounter = 0f;
         }
     }
 
-    private void ApplyBetterGravity()
+    private void ApplyGravityAndLimitFallSpeed()
     {
         Vector2 velocity = GetBodyVelocity();
 
-        // Oyuncu düşüyorsa daha güçlü gravity uygula.
-        if (velocity.y < 0f)
+        if (velocity.y < -0.01f)
         {
-            velocity.y += Physics2D.gravity.y * (fallGravityMultiplier - 1f) * Time.fixedDeltaTime;
+            rb.gravityScale =
+                baseGravityScale * fallingGravityMultiplier;
         }
-        // Oyuncu yükseliyor ama jump tuşunu bırakmışsa yükselişi daha hızlı kes.
-        else if (velocity.y > 0f && !jumpHeld)
+        else
         {
-            velocity.y += Physics2D.gravity.y * (jumpReleaseGravityMultiplier - 1f) * Time.fixedDeltaTime;
+            rb.gravityScale = baseGravityScale;
         }
 
         if (velocity.y < maxFallSpeed)
         {
             velocity.y = maxFallSpeed;
-        }
 
-        SetBodyVelocity(velocity);
-    }
-
-    private void CutJumpIfMovingUp()
-    {
-        Vector2 velocity = GetBodyVelocity();
-
-        if (velocity.y > 0f)
-        {
-            velocity.y *= jumpCutMultiplier;
             SetBodyVelocity(velocity);
         }
     }
@@ -228,11 +253,12 @@ public class PlayerController2D : MonoBehaviour
             moveInput = Vector2.zero;
             jumpBufferCounter = 0f;
             coyoteCounter = 0f;
-            jumpHeld = false;
-            jumpReleasedThisFrame = false;
+            jumpCutRequested = false;
 
             Vector2 velocity = GetBodyVelocity();
+
             velocity.x = 0f;
+
             SetBodyVelocity(velocity);
         }
     }
@@ -265,12 +291,37 @@ public class PlayerController2D : MonoBehaviour
 #endif
     }
 
+    private void OnValidate()
+    {
+        moveSpeed = Mathf.Max(0f, moveSpeed);
+        jumpForce = Mathf.Max(0f, jumpForce);
+
+        coyoteTime = Mathf.Max(0f, coyoteTime);
+        jumpBufferTime = Mathf.Max(0f, jumpBufferTime);
+
+        jumpCutMultiplier = Mathf.Clamp01(jumpCutMultiplier);
+
+        baseGravityScale = Mathf.Max(0f, baseGravityScale);
+        fallingGravityMultiplier =
+            Mathf.Max(1f, fallingGravityMultiplier);
+
+        maxFallSpeed =
+            -Mathf.Max(0.01f, Mathf.Abs(maxFallSpeed));
+
+        groundCheckRadius = Mathf.Max(0.01f, groundCheckRadius);
+    }
+
     private void OnDrawGizmosSelected()
     {
         if (!drawGroundCheckGizmo || groundCheck == null)
+        {
             return;
+        }
 
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        Gizmos.DrawWireSphere(
+            groundCheck.position,
+            groundCheckRadius
+        );
     }
 }
