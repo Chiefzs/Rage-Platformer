@@ -4,6 +4,8 @@ using UnityEngine;
 [DefaultExecutionOrder(-1000)]
 public sealed class GameSession : MonoBehaviour
 {
+    private const string SfxSourceObjectName = "Persistent SFX";
+
     public static GameSession Instance { get; private set; }
 
     [Header("Lives Settings")]
@@ -17,6 +19,8 @@ public sealed class GameSession : MonoBehaviour
     public int StartingLives => startingLives;
 
     public event Action<int> LivesChanged;
+
+    private AudioSource sfxSource;
 
 
     [RuntimeInitializeOnLoadMethod(
@@ -43,7 +47,51 @@ public sealed class GameSession : MonoBehaviour
 
         DontDestroyOnLoad(gameObject);
 
+        ConfigureSfxSource();
+
         CurrentLives = Mathf.Max(1, startingLives);
+    }
+
+    public void PlaySfx(AudioClip clip, float volume = 1f)
+    {
+        if (clip == null)
+        {
+            return;
+        }
+
+        if (sfxSource == null)
+        {
+            ConfigureSfxSource();
+        }
+
+        sfxSource.PlayOneShot(clip, Mathf.Clamp01(volume));
+    }
+
+    private void ConfigureSfxSource()
+    {
+        Transform sourceTransform = transform.Find(SfxSourceObjectName);
+
+        if (sourceTransform == null)
+        {
+            GameObject sourceObject = new GameObject(
+                SfxSourceObjectName
+            );
+            sourceTransform = sourceObject.transform;
+            sourceTransform.SetParent(transform, false);
+        }
+
+        sfxSource = sourceTransform.GetComponent<AudioSource>();
+
+        if (sfxSource == null)
+        {
+            sfxSource = sourceTransform.gameObject.AddComponent<AudioSource>();
+        }
+
+        sfxSource.playOnAwake = false;
+        sfxSource.loop = false;
+        sfxSource.spatialBlend = 0f;
+        sfxSource.dopplerLevel = 0f;
+        sfxSource.ignoreListenerPause = true;
     }
 
 

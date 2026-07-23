@@ -7,33 +7,93 @@ using UnityEngine.SceneManagement;
 [RequireComponent(typeof(Rigidbody2D))]
 public sealed class PlayerDeathController : MonoBehaviour
 {
-    [Header("Explosion")]
-    [Tooltip("Oyuncu öldüğünde oluşturulacak patlama prefabı.")]
-    [SerializeField]
-    private GameObject explosionPrefab;
-
-    [Tooltip("Patlama efektinin Player merkezine göre konumu.")]
-    [SerializeField]
-    private Vector3 explosionOffset = Vector3.zero;
-
     [Header("Death Timing")]
     [Tooltip(
-        "Patlama başladıktan sonra reset veya Game Over için " +
-        "kaç saniye beklenecek?"
+        "Ölüm başladığında reset veya Game Over için " +
+        "beklenecek toplam süre."
     )]
     [SerializeField]
     [Min(0f)]
-    private float deathSequenceDuration = 0.65f;
+    private float deathSequenceDuration = 0.82f;
+
+    [Header("Death Audio")]
+    [Tooltip("Can kaybedildiğinde çalacak, insan sesi içermeyen efekt.")]
+    [SerializeField]
+    private AudioClip lifeLostClip;
+
+    [SerializeField]
+    [Range(0f, 1f)]
+    private float lifeLostVolume = 0.88f;
+
+    [Header("Sprite Fragmentation")]
+    [Tooltip("Mevcut karakter karesini parçalara ayıran materyal.")]
+    [SerializeField]
+    private Material fragmentMaterial;
+
+    [Tooltip(
+        "Parçalanmadan önce mevcut karakter karesinin " +
+        "okunacağı çok kısa bekleme."
+    )]
+    [SerializeField]
+    [Min(0f)]
+    private float fragmentHoldDuration = 0.035f;
+
+    [SerializeField]
+    [Min(0f)]
+    private float fragmentMinimumSpeed = 1.25f;
+
+    [SerializeField]
+    [Min(0f)]
+    private float fragmentMaximumSpeed = 2.85f;
+
+    [SerializeField]
+    [Min(0f)]
+    private float fragmentUpwardBoost = 0.9f;
+
+    [SerializeField]
+    [Min(0f)]
+    private float fragmentGravity = 5.8f;
+
+    [SerializeField]
+    [Min(0f)]
+    private float fragmentDrag = 0.28f;
+
+    [SerializeField]
+    [Min(0f)]
+    private float fragmentAngularSpeed = 390f;
+
+    [SerializeField]
+    [Min(0.05f)]
+    private float fragmentLifetime = 0.72f;
+
+    [SerializeField]
+    [Min(0f)]
+    private float fragmentFadeStart = 0.48f;
 
     private PlayerController2D playerController;
     private Rigidbody2D rb;
-
     private SpriteRenderer[] spriteRenderers;
     private Collider2D[] playerColliders;
+    private PlayerSpriteAnimator[] spriteAnimators;
 
+    private Vector2 deathEntryVelocity;
     private bool isDead;
 
     public bool IsDead => isDead;
+
+    public AudioClip LifeLostClip => lifeLostClip;
+
+    public Material FragmentMaterial => fragmentMaterial;
+
+    public float DeathSequenceDuration => deathSequenceDuration;
+
+    public float LifeLostVolume => lifeLostVolume;
+
+    public float FragmentHoldDuration => fragmentHoldDuration;
+
+    public float FragmentLifetime => fragmentLifetime;
+
+    public float FragmentFadeStart => fragmentFadeStart;
 
     private void Awake()
     {
@@ -43,8 +103,10 @@ public sealed class PlayerDeathController : MonoBehaviour
         spriteRenderers = GetComponentsInChildren<SpriteRenderer>(
             includeInactive: true
         );
-
         playerColliders = GetComponentsInChildren<Collider2D>(
+            includeInactive: true
+        );
+        spriteAnimators = GetComponentsInChildren<PlayerSpriteAnimator>(
             includeInactive: true
         );
     }
@@ -54,10 +116,6 @@ public sealed class PlayerDeathController : MonoBehaviour
     /// </summary>
     public void Die()
     {
-        /*
-         * Oyuncu aynı anda birden fazla collider'a değse bile
-         * yalnızca bir can kaybetmesini sağlar.
-         */
         if (isDead)
         {
             return;
@@ -70,19 +128,12 @@ public sealed class PlayerDeathController : MonoBehaviour
     {
         isDead = true;
 
-        DisablePlayer();
+        float sequenceStartTime = Time.unscaledTime;
+        deathEntryVelocity = GetBodyVelocity();
 
-        GameObject explosionInstance = CreateExplosion();
-
-        if (explosionInstance != null)
-        {
-            StartCoroutine(
-                DestroyExplosionAfterRealtime(
-                    explosionInstance,
-                    2f
-                )
-            );
-        }
+        DisablePlayerMotionAndCollisions();
+        StopSpriteAnimation();
+        PlayLifeLostSound();
 
         bool hasLivesRemaining = false;
 
@@ -95,17 +146,18 @@ public sealed class PlayerDeathController : MonoBehaviour
         }
         else
         {
-            hasLivesRemaining =
-                GameSession.Instance.LoseLife();
+            hasLivesRemaining = GameSession.Instance.LoseLife();
         }
 
-        /*
-         * Time.timeScale daha sonra 0 olsa bile
-         * patlama bekleme süresi çalışmaya devam eder.
-         */
-        yield return new WaitForSecondsRealtime(
-            deathSequenceDuration
-        );
+        yield return PlayFragmentationAnimation();
+
+        float elapsedTime = Time.unscaledTime - sequenceStartTime;
+        float remainingTime = deathSequenceDuration - elapsedTime;
+
+        if (remainingTime > 0f)
+        {
+            yield return new WaitForSecondsRealtime(remainingTime);
+        }
 
         if (hasLivesRemaining)
         {
@@ -117,7 +169,7 @@ public sealed class PlayerDeathController : MonoBehaviour
         }
     }
 
-    private void DisablePlayer()
+    private void DisablePlayerMotionAndCollisions()
     {
         playerController.SetControlsEnabled(false);
 
@@ -132,48 +184,147 @@ public sealed class PlayerDeathController : MonoBehaviour
 
         foreach (Collider2D playerCollider in playerColliders)
         {
-            playerCollider.enabled = false;
-        }
-
-        foreach (SpriteRenderer spriteRenderer in spriteRenderers)
-        {
-            spriteRenderer.enabled = false;
+            if (playerCollider != null)
+            {
+                playerCollider.enabled = false;
+            }
         }
     }
 
-    private GameObject CreateExplosion()
+    private void StopSpriteAnimation()
     {
-        if (explosionPrefab == null)
+        foreach (PlayerSpriteAnimator spriteAnimator in spriteAnimators)
         {
-            Debug.LogWarning(
-                "PlayerDeathController üzerinde " +
-                "Explosion Prefab atanmamış."
+            if (spriteAnimator != null)
+            {
+                spriteAnimator.enabled = false;
+            }
+        }
+    }
+
+    private void PlayLifeLostSound()
+    {
+        if (GameSession.Instance != null)
+        {
+            GameSession.Instance.PlaySfx(
+                lifeLostClip,
+                lifeLostVolume
+            );
+        }
+    }
+
+    private IEnumerator PlayFragmentationAnimation()
+    {
+        SpriteRenderer primaryRenderer = FindPrimaryRenderer();
+
+        if (primaryRenderer == null)
+        {
+            HidePlayerVisuals();
+            yield break;
+        }
+
+        if (fragmentHoldDuration > 0f)
+        {
+            yield return new WaitForSecondsRealtime(
+                fragmentHoldDuration
+            );
+        }
+
+        Vector2 inheritedVelocity = Vector2.ClampMagnitude(
+            deathEntryVelocity,
+            5f
+        ) * 0.18f;
+
+        SpriteFragmentBurst fragmentBurst =
+            SpriteFragmentBurst.Create(
+                primaryRenderer,
+                fragmentMaterial,
+                inheritedVelocity,
+                fragmentMinimumSpeed,
+                fragmentMaximumSpeed,
+                fragmentUpwardBoost,
+                fragmentGravity,
+                fragmentDrag,
+                fragmentAngularSpeed,
+                fragmentLifetime,
+                fragmentFadeStart
             );
 
-            return null;
+        if (fragmentBurst == null)
+        {
+            Debug.LogWarning(
+                "Karakter sprite parçaları oluşturulamadı.",
+                gameObject
+            );
+            yield break;
         }
 
-        Vector3 explosionPosition =
-            transform.position + explosionOffset;
+        HidePlayerVisuals();
 
-        return Instantiate(
-            explosionPrefab,
-            explosionPosition,
-            Quaternion.identity
-        );
+        // Bir kare boyunca parçalar karakteri tam olarak yeniden kurar.
+        yield return null;
+        fragmentBurst.Begin();
     }
 
-    private IEnumerator DestroyExplosionAfterRealtime(
-        GameObject explosionObject,
-        float waitTime
+    private SpriteRenderer FindPrimaryRenderer()
+    {
+        foreach (SpriteRenderer spriteRenderer in spriteRenderers)
+        {
+            if (
+                spriteRenderer != null &&
+                spriteRenderer.enabled &&
+                spriteRenderer.gameObject.activeInHierarchy &&
+                spriteRenderer.sprite != null
+            )
+            {
+                return spriteRenderer;
+            }
+        }
+
+        return null;
+    }
+
+    private void HidePlayerVisuals()
+    {
+        foreach (SpriteRenderer spriteRenderer in spriteRenderers)
+        {
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.enabled = false;
+            }
+        }
+    }
+
+    private Vector2 GetBodyVelocity()
+    {
+#if UNITY_6000_0_OR_NEWER
+        return rb.linearVelocity;
+#else
+        return rb.velocity;
+#endif
+    }
+
+    public void ConfigurePresentation(
+        AudioClip clip,
+        Material spriteFragmentMaterial,
+        float sequenceDuration
     )
     {
-        yield return new WaitForSecondsRealtime(waitTime);
-
-        if (explosionObject != null)
-        {
-            Destroy(explosionObject);
-        }
+        lifeLostClip = clip;
+        fragmentMaterial = spriteFragmentMaterial;
+        fragmentHoldDuration = 0.035f;
+        fragmentMinimumSpeed = 1.25f;
+        fragmentMaximumSpeed = 2.85f;
+        fragmentUpwardBoost = 0.9f;
+        fragmentGravity = 5.8f;
+        fragmentDrag = 0.28f;
+        fragmentAngularSpeed = 390f;
+        fragmentLifetime = 0.72f;
+        fragmentFadeStart = 0.48f;
+        deathSequenceDuration = Mathf.Max(
+            fragmentHoldDuration + fragmentLifetime + 0.05f,
+            sequenceDuration
+        );
     }
 
     private void ReloadCurrentLevel()
@@ -188,7 +339,6 @@ public sealed class PlayerDeathController : MonoBehaviour
                 "Aktif sahne Build Profiles listesinde bulunmuyor. " +
                 "File > Build Profiles içinden Add Open Scenes yap."
             );
-
             return;
         }
 
@@ -204,7 +354,6 @@ public sealed class PlayerDeathController : MonoBehaviour
                 "Canvas üzerinde GameOverMenu component'i " +
                 "olduğundan emin ol."
             );
-
             return;
         }
 
@@ -214,8 +363,27 @@ public sealed class PlayerDeathController : MonoBehaviour
 #if UNITY_EDITOR
     private void OnValidate()
     {
-        deathSequenceDuration =
-            Mathf.Max(0f, deathSequenceDuration);
+        lifeLostVolume = Mathf.Clamp01(lifeLostVolume);
+        fragmentHoldDuration = Mathf.Max(0f, fragmentHoldDuration);
+        fragmentMinimumSpeed = Mathf.Max(0f, fragmentMinimumSpeed);
+        fragmentMaximumSpeed = Mathf.Max(
+            fragmentMinimumSpeed,
+            fragmentMaximumSpeed
+        );
+        fragmentUpwardBoost = Mathf.Max(0f, fragmentUpwardBoost);
+        fragmentGravity = Mathf.Max(0f, fragmentGravity);
+        fragmentDrag = Mathf.Max(0f, fragmentDrag);
+        fragmentAngularSpeed = Mathf.Max(0f, fragmentAngularSpeed);
+        fragmentLifetime = Mathf.Max(0.05f, fragmentLifetime);
+        fragmentFadeStart = Mathf.Clamp(
+            fragmentFadeStart,
+            0f,
+            fragmentLifetime
+        );
+        deathSequenceDuration = Mathf.Max(
+            deathSequenceDuration,
+            fragmentHoldDuration + fragmentLifetime + 0.05f
+        );
     }
 #endif
 }

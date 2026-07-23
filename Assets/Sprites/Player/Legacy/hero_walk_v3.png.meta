@@ -1,0 +1,383 @@
+fileFormatVersion: 2
+guid: def53df5380513f4ca9ec6f4a3805370
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -4831015292448905052
+    second: rage_hero_walk_v3_0
+  - first:
+      213: -7687198971875951441
+    second: rage_hero_walk_v3_1
+  - first:
+      213: 726463044422368146
+    second: rage_hero_walk_v3_2
+  - first:
+      213: -6317686999270685865
+    second: rage_hero_walk_v3_3
+  - first:
+      213: -1597919762229231770
+    second: rage_hero_walk_v3_4
+  - first:
+      213: 2300094673450624821
+    second: rage_hero_walk_v3_5
+  - first:
+      213: 8088346119714844541
+    second: rage_hero_walk_v3_6
+  - first:
+      213: -4367406719366232293
+    second: rage_hero_walk_v3_7
+  - first:
+      213: -8354836616373275366
+    second: Hero_Walk_1
+  - first:
+      213: 4194473889573187128
+    second: Hero_Walk_2
+  - first:
+      213: 9070338713820004469
+    second: Hero_Walk_3
+  - first:
+      213: -4616963202828180853
+    second: Hero_Walk_4
+  - first:
+      213: 4486960060532156569
+    second: Hero_Walk_5
+  - first:
+      213: -7229142370701601720
+    second: Hero_Walk_6
+  - first:
+      213: 1912791623181546890
+    second: Hero_Walk_7
+  - first:
+      213: 7913735164164139392
+    second: Hero_Walk_8
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 347
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Hero_Walk_1
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 458
+        width: 429
+        height: 458
+      alignment: 9
+      pivot: {x: 0.66899765, y: 0.060043667}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a15f4acfc58ad0c80800000000000000
+      internalID: -8354836616373275366
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Hero_Walk_2
+      rect:
+        serializedVersion: 2
+        x: 429
+        y: 458
+        width: 429
+        height: 458
+      alignment: 9
+      pivot: {x: 0.5547786, y: 0.051310044}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 83e29af77c3c53a30800000000000000
+      internalID: 4194473889573187128
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Hero_Walk_3
+      rect:
+        serializedVersion: 2
+        x: 858
+        y: 458
+        width: 430
+        height: 458
+      alignment: 9
+      pivot: {x: 0.57325584, y: 0.051310044}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 57007b5e00150ed70800000000000000
+      internalID: 9070338713820004469
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Hero_Walk_4
+      rect:
+        serializedVersion: 2
+        x: 1288
+        y: 458
+        width: 429
+        height: 458
+      alignment: 9
+      pivot: {x: 0.24708624, y: 0.046943232}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b826062cd604defb0800000000000000
+      internalID: -4616963202828180853
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Hero_Walk_5
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 429
+        height: 458
+      alignment: 9
+      pivot: {x: 0.6724942, y: 0.16048035}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9986261f662e44e30800000000000000
+      internalID: 4486960060532156569
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Hero_Walk_6
+      rect:
+        serializedVersion: 2
+        x: 429
+        y: 0
+        width: 429
+        height: 458
+      alignment: 9
+      pivot: {x: 0.5617716, y: 0.16703057}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8441b93c05decab90800000000000000
+      internalID: -7229142370701601720
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Hero_Walk_7
+      rect:
+        serializedVersion: 2
+        x: 858
+        y: 0
+        width: 430
+        height: 458
+      alignment: 9
+      pivot: {x: 0.57093024, y: 0.16048035}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a85341dc8d99b8a10800000000000000
+      internalID: 1912791623181546890
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Hero_Walk_8
+      rect:
+        serializedVersion: 2
+        x: 1288
+        y: 0
+        width: 429
+        height: 458
+      alignment: 9
+      pivot: {x: 0.24708624, y: 0.16266376}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 089658af33c33dd60800000000000000
+      internalID: 7913735164164139392
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Hero_Walk_1: -8354836616373275366
+      Hero_Walk_2: 4194473889573187128
+      Hero_Walk_3: 9070338713820004469
+      Hero_Walk_4: -4616963202828180853
+      Hero_Walk_5: 4486960060532156569
+      Hero_Walk_6: -7229142370701601720
+      Hero_Walk_7: 1912791623181546890
+      Hero_Walk_8: 7913735164164139392
+      rage_hero_walk_v3_0: -4831015292448905052
+      rage_hero_walk_v3_1: -7687198971875951441
+      rage_hero_walk_v3_2: 726463044422368146
+      rage_hero_walk_v3_3: -6317686999270685865
+      rage_hero_walk_v3_4: -1597919762229231770
+      rage_hero_walk_v3_5: 2300094673450624821
+      rage_hero_walk_v3_6: 8088346119714844541
+      rage_hero_walk_v3_7: -4367406719366232293
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

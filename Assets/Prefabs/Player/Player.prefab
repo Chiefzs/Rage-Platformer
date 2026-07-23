@@ -165,10 +165,11 @@ MonoBehaviour:
   fallingGravityMultiplier: 1.5
   maxFallSpeed: -22
   groundCheck: {fileID: 6458113065228220552}
-  groundCheckRadius: 0.12
+  groundCheckSize: {x: 0.32, y: 0.08}
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
+  movementPhysicsMaterial: {fileID: 0}
   standingColliderSize: {x: 1, y: 1}
   standingColliderOffset: {x: 0, y: 0}
   crouchingColliderSize: {x: 1, y: 0.55}
@@ -191,9 +192,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ec56de56ef364354992c122801aab9be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerDeathController
-  explosionPrefab: {fileID: 6462161027745808433, guid: dabccf06dc5c8224e9de1a98ee78939b, type: 3}
-  explosionOffset: {x: 0, y: 0, z: 0}
-  deathSequenceDuration: 0.65
+  deathSequenceDuration: 0.82
+  lifeLostClip: {fileID: 8300000, guid: a8d7eecf562ba20469ee7279764c3765, type: 3}
+  lifeLostVolume: 0.88
+  fragmentMaterial: {fileID: 2100000, guid: 1405223549c222b4eb5e8300eb6f96fe, type: 2}
+  fragmentHoldDuration: 0.035
+  fragmentMinimumSpeed: 1.25
+  fragmentMaximumSpeed: 2.85
+  fragmentUpwardBoost: 0.9
+  fragmentGravity: 5.8
+  fragmentDrag: 0.28
+  fragmentAngularSpeed: 390
+  fragmentLifetime: 0.72
+  fragmentFadeStart: 0.48
 --- !u!114 &7371676974913808142
 MonoBehaviour:
   m_ObjectHideFlags: 0

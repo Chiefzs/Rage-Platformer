@@ -153,3 +153,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelExit
   transitionDelay: 0.15
+  doorEnterClip: {fileID: 8300000, guid: 09ff5f8b7d10f2a4b99e8c03136ce16d, type: 3}
+  doorEnterVolume: 0.82

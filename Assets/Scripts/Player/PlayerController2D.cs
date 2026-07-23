@@ -52,10 +52,19 @@ public class PlayerController2D : MonoBehaviour
     private Transform groundCheck;
 
     [SerializeField]
-    private float groundCheckRadius = 0.12f;
+    private Vector2 groundCheckSize =
+        new Vector2(0.32f, 0.08f);
 
     [SerializeField]
     private LayerMask groundLayer;
+
+    [Header("Collision Feel")]
+    [Tooltip(
+        "Duvar temasında dikey hızı kesmemesi için kullanılan " +
+        "sürtünmesiz 2D fizik materyali."
+    )]
+    [SerializeField]
+    private PhysicsMaterial2D movementPhysicsMaterial;
 
     [Header("Crouch Settings")]
     [SerializeField]
@@ -144,6 +153,11 @@ public class PlayerController2D : MonoBehaviour
 
         rb.freezeRotation = true;
         rb.gravityScale = baseGravityScale;
+
+        if (movementPhysicsMaterial != null)
+        {
+            bodyCollider.sharedMaterial = movementPhysicsMaterial;
+        }
 
         moveAction = playerInput.actions.FindAction(
             "Move",
@@ -381,9 +395,10 @@ public class PlayerController2D : MonoBehaviour
         }
 
         Collider2D groundCollider =
-            Physics2D.OverlapCircle(
+            Physics2D.OverlapBox(
                 groundCheck.position,
-                groundCheckRadius,
+                groundCheckSize,
+                0f,
                 groundLayer
             );
 
@@ -543,6 +558,39 @@ public class PlayerController2D : MonoBehaviour
         return isGrounded && !wasGrounded;
     }
 
+    public void ConfigureCollisionShape(
+        Vector2 standingSize,
+        Vector2 standingOffset,
+        Vector2 crouchingSize,
+        Vector2 crouchingOffset,
+        Vector2 groundedCheckSize,
+        PhysicsMaterial2D physicsMaterial
+    )
+    {
+        standingColliderSize = standingSize;
+        standingColliderOffset = standingOffset;
+        crouchingColliderSize = crouchingSize;
+        crouchingColliderOffset = crouchingOffset;
+        groundCheckSize = groundedCheckSize;
+        movementPhysicsMaterial = physicsMaterial;
+
+        if (bodyCollider == null)
+        {
+            bodyCollider = GetComponent<BoxCollider2D>();
+        }
+
+        if (bodyCollider != null)
+        {
+            bodyCollider.size = isCrouching
+                ? crouchingColliderSize
+                : standingColliderSize;
+            bodyCollider.offset = isCrouching
+                ? crouchingColliderOffset
+                : standingColliderOffset;
+            bodyCollider.sharedMaterial = movementPhysicsMaterial;
+        }
+    }
+
     private Vector2 GetBodyVelocity()
     {
 #if UNITY_6000_0_OR_NEWER
@@ -586,8 +634,11 @@ public class PlayerController2D : MonoBehaviour
                 Mathf.Abs(maxFallSpeed)
             );
 
-        groundCheckRadius =
-            Mathf.Max(0.01f, groundCheckRadius);
+        groundCheckSize.x =
+            Mathf.Max(0.02f, groundCheckSize.x);
+
+        groundCheckSize.y =
+            Mathf.Max(0.02f, groundCheckSize.y);
 
         standingColliderSize.x =
             Mathf.Max(0.05f, standingColliderSize.x);
@@ -624,9 +675,9 @@ public class PlayerController2D : MonoBehaviour
         {
             Gizmos.color = Color.yellow;
 
-            Gizmos.DrawWireSphere(
+            Gizmos.DrawWireCube(
                 groundCheck.position,
-                groundCheckRadius
+                groundCheckSize
             );
         }
 

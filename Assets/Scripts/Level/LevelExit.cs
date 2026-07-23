@@ -15,12 +15,25 @@ public sealed class LevelExit : MonoBehaviour
     [Min(0f)]
     private float transitionDelay = 0.15f;
 
+    [Header("Door Audio")]
+    [Tooltip("Oyuncu kapıya girdiğinde çalacak efekt.")]
+    [SerializeField]
+    private AudioClip doorEnterClip;
+
+    [SerializeField]
+    [Range(0f, 1f)]
+    private float doorEnterVolume = 0.82f;
+
     private Collider2D exitCollider;
 
     private PlayerController2D currentPlayer;
     private Rigidbody2D currentPlayerBody;
 
     private bool isCompletingLevel;
+
+    public AudioClip DoorEnterClip => doorEnterClip;
+
+    public float DoorEnterVolume => doorEnterVolume;
 
     private void Awake()
     {
@@ -71,6 +84,14 @@ public sealed class LevelExit : MonoBehaviour
         }
 
         isCompletingLevel = true;
+
+        if (GameSession.Instance != null)
+        {
+            GameSession.Instance.PlaySfx(
+                doorEnterClip,
+                doorEnterVolume
+            );
+        }
 
         currentPlayer = player;
         currentPlayerBody =
@@ -162,6 +183,9 @@ public sealed class LevelExit : MonoBehaviour
 
     private void RestorePlayerAfterFailure()
     {
+        exitCollider.enabled = true;
+        isCompletingLevel = false;
+
         if (currentPlayerBody != null)
         {
             currentPlayerBody.simulated = true;
@@ -174,11 +198,18 @@ public sealed class LevelExit : MonoBehaviour
 
     }
 
+    public void ConfigureAudio(AudioClip clip, float volume = 0.82f)
+    {
+        doorEnterClip = clip;
+        doorEnterVolume = Mathf.Clamp01(volume);
+    }
+
 #if UNITY_EDITOR
     private void OnValidate()
     {
         transitionDelay =
             Mathf.Max(0f, transitionDelay);
+        doorEnterVolume = Mathf.Clamp01(doorEnterVolume);
     }
 #endif
 }
